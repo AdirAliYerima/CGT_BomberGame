@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Simple Bomber Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Simple Bomber Game</h1>
+  <div id="info" class="info">
+    <label for="board-size">Board size</label>
+    <select id="board-size">
+      <option value="4">4 × 4 (Small)</option>
+      <option value="5">5 × 5 (Compact)</option>
+      <option value="6" selected>6 × 6 (Standard)</option>
+      <option value="8">8 × 8 (Large)</option>
+      <option value="10">10 × 10 (Expanded)</option>
+    </select>
+  </div>
+  <div id="board" class="board"></div>
+  <div id="info" class="info">
+    <p id="turn">Turn: Player 1</p>
+    <p id="selected">Selected: None</p>
+    <button id="reset">Reset Game</button>
+  </div>
+  <div id="error" style="position:fixed;left:8px;right:8px;top:8px;background:#fee;padding:10px;border:2px solid #f44;color:#600;display:none;z-index:9999"></div>
+  <script>
+    // Show runtime errors in-page to help debugging when DevTools isn't open
+    window.addEventListener('error', (ev) => {
+      const el = document.getElementById('error');
+      el.textContent = `Error: ${ev.message} at ${ev.filename}:${ev.lineno}:${ev.colno}`;
+      el.style.display = 'block';
+      console.error(ev.error || ev.message);
+    });
+    window.addEventListener('unhandledrejection', (ev) => {
+      const el = document.getElementById('error');
+      el.textContent = `Unhandled promise rejection: ${ev.reason}`;
+      el.style.display = 'block';
+      console.error(ev.reason);
+    });
+  </script>
+  <script src="game.js"></script>
+</body>
+</html>

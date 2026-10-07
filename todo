@@ -1,0 +1,22 @@
+The goal is to create the simplest version of the bomber game using html, css and Javascript 
+It will use the same idea of the bomber game but simplified.
+It will be a 2-player game with 2 bombers per player on a 6x6 board.
+Start on an empty board. When a bomb explodes it makes the landed cell inaccessible to both players (blocks movement).
+Each turn a player may move one bomber up to 3 orthogonal steps along an unobstructed path; blocked and occupied cells cannot be crossed. After moving, the player chooses one adjacent square around the moved bomber to drop a bomb. The bomb explodes immediately and only its cell becomes blocked. A player loses when neither bomber has a legal move.
+Players alternate turns moving their bombers. A player loses when none of their bombers has any legal move.
+
+Game rules notes: 
+- the bomb block movement 
+
+Bugs: 
+-does not give the user the ability to drop the bomb on all the rectangle that are around the current position (fixed)
+- when a bomb is already drop on a space the other opponent can drop another bomb which reset the timer ( should be changed) (fixed)
+-a bomb can be drop onm anm opponent specific rectangle which makes the space disappear (fixed)
+
+Game rules issues: 
+#1 - in the game state where a player do not have any other move and the counter a not completed, givent that the player cannot move in, it leaves the gaem at a state of stalemate. If rule were to be changes and player can move in the bomb space, then in the occasion the bomb explore the player could dissapear
+<for now the counter will be removed>
+
+
+notes: 
+to run the program: python -m http.server 8080
