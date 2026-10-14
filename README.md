@@ -1,15 +1,43 @@
 # CGT Bomber Game
 
-Open `index.html` in a browser to play locally. 
-Choose one or two bombers per player before play; changing the count starts a new game. Click a bomber (A or B) to select it, then click a destination reachable within the bomber move limit selected by the slider (1 to 5 orthogonal or diagonal steps). Bombers cannot pass through blocked or occupied cells.
-After moving, choose any legal adjacent cell to drop a bomb. Each bomb uses the fuse value selected by the bomb-delay slider. On each subsequent bomber move, its counter decreases by one; when it reaches zero, the bomb explodes in the center and the four orthogonal neighboring cells. 
-Unoccupied blast cells become blocked, while any cell occupied by a bomber is skipped and stays open. 
-A player loses when none of their bombers has a legal move.
+A simple browser-based strategy game for two players.
 
+## Play locally
 
-Furthermore the custom parameters such as the selection of bombers per players, the bomb delay meaning the number of turn need to be taken for a bomb to explode, the the limit on up to the numbers of move a bomber can make. 
+Open `index.html` in a browser, or run a local server:
 
-Another way to run 
-python -m http.server 8081 
-In brownser http://localhost:8081 
+```bash
+python -m http.server 8081
+```
+
+Then open:
+
+```text
+http://localhost:8081
+```
+
+## How to play
+
+- Choose how many bombers each player has before the game starts.
+- Click one of your bombers to select it.
+- Click a reachable destination within the move limit set by the slider.
+- Bombers may move orthogonally or diagonally, but cannot pass through blocked or occupied cells.
+- After moving, choose a valid adjacent cell to place a bomb.
+- Each bomb has a fuse countdown based on the bomb delay setting.
+- When the timer reaches zero, the bomb explodes in its center and in the four orthogonal neighboring cells.
+- Empty blast cells become blocked; cells occupied by bombers are skipped and remain open.
+- If a player has no legal moves left, they lose.
+
+## Custom settings
+
+The game includes a few adjustable options:
+
+- Number of bombers per player
+- Bomb delay (how many turns before a bomb explodes)
+- Maximum move distance per bomber
+- Board size
+
+## Goal
+
+Outmaneuver your opponent, block their movement, and force them into a position where they cannot make a valid move.
 
