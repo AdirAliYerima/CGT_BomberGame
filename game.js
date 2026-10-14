@@ -5,15 +5,21 @@ const turnEl = document.getElementById('turn');
 const selectedEl = document.getElementById('selected');
 const resetBtn = document.getElementById('reset');
 const boardSizeEl = document.getElementById('board-size');
+const bomberCountEl = document.getElementById('bomber-count');
+const bombDelayEl = document.getElementById('bomb-delay');
+const bombDelayValueEl = document.getElementById('bomb-delay-value');
+const moveRangeEl = document.getElementById('move-range');
+const moveRangeValueEl = document.getElementById('move-range-value');
 
 function createInitialState(size){
 	const rows = size;
 	const cols = size;
+	const bomberCount = Number(bomberCountEl.value || 2);
 	return {
-		cells:[],turn:1,selected:null,awaitingBomb:null,
+		cells:[],turn:1,selected:null,awaitingBomb:null,bombs:[],
 		players:{
-			1:{bombers:[{r:0,c:0,owner:1},{r:0,c:cols-1,owner:1}]},
-			2:{bombers:[{r:rows-1,c:0,owner:2},{r:rows-1,c:cols-1,owner:2}]}
+			1:{bombers:[{r:0,c:0,owner:1},{r:0,c:cols-1,owner:1}].slice(0,bomberCount)},
+			2:{bombers:[{r:rows-1,c:0,owner:2},{r:rows-1,c:cols-1,owner:2}].slice(0,bomberCount)}
 		}
 	}
 }
@@ -27,8 +33,6 @@ function dbg(msg){
 	}catch(e){}
 	console.log('[DBG]',msg);
 }
-dbg('game.js loaded')
-
 function init(){
 	try{
 		boardEl.innerHTML = '';
@@ -45,6 +49,8 @@ function init(){
 				boardEl.appendChild(cell);
 			}
 		}
+		updateBombDelayLabel();
+		updateMoveRangeLabel();
 		render();
 	}catch(err){console.error('init error',err);throw err}
 }
@@ -76,6 +82,14 @@ function render(){
 				el.appendChild(div);
 			}
 		}))
+		state.bombs.forEach(bomb=>{
+			const el = getCellEl(bomb.r,bomb.c);
+			if(!el) return;
+			const marker = document.createElement('div');
+			marker.className = 'bomb-marker';
+			marker.textContent = String(bomb.turnsRemaining);
+			el.appendChild(marker);
+		});
 
 		// highlight bomb placement candidates if awaitingBomb
 		if(state.awaitingBomb){
@@ -109,6 +123,41 @@ function getBombPlacementCandidates(r,c){
 	return candidates;
 }
 
+function updateBombDelayLabel(){
+	const delay = Number(bombDelayEl.value || 3);
+	bombDelayValueEl.textContent = `${delay} ${delay===1?'turn':'turns'}`;
+}
+
+function getMaxMoveDistance(){return Number(moveRangeEl.value || 3)}
+
+function updateMoveRangeLabel(){
+	const moves = getMaxMoveDistance();
+	moveRangeValueEl.textContent = `${moves} ${moves===1?'move':'moves'}`;
+}
+
+function getExplosionCells(r,c){
+	const cells = [{r,c}];
+	for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+		const nr=r+dr, nc=c+dc;
+		if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS){
+			cells.push({r:nr,c:nc});
+		}
+	}
+	return cells;
+}
+
+function explodeBomb(bomb){
+	const blastCells = getExplosionCells(bomb.r,bomb.c);
+	blastCells.forEach(({r,c})=>{
+		if(r<0 || r>=ROWS || c<0 || c>=COLS) return;
+		if(findBomberAt(r,c)) return;
+		const cell = state.cells[r][c];
+		if(cell){ cell.blocked = true; }
+	});
+	state.bombs = state.bombs.filter(activeBomb => activeBomb !== bomb);
+}
+
+
 function onCellClick(e){
 	const r = Number(e.currentTarget.dataset.r), c = Number(e.currentTarget.dataset.c);
 	// If awaiting bomb placement, treat this click as bomb-target selection
@@ -133,12 +182,15 @@ function onCellClick(e){
 
 	// move if selected
 	if(state.selected){
-		const dist = Math.abs(state.selected.r - r) + Math.abs(state.selected.c - c);
-		if(dist>3){ alert('Can only move up to 3 spaces'); return }
+		const dist = Math.max(Math.abs(state.selected.r - r), Math.abs(state.selected.c - c));
+		const maxMoves = getMaxMoveDistance();
+		if(dist>maxMoves){ alert(`Can only move up to ${maxMoves} ${maxMoves===1?'space':'spaces'}`); return }
 		if(isCellUnavailable(r,c)){ alert('Cell unavailable'); return }
 		if(findBomberAt(r,c)){ alert('Cell occupied'); return }
 		if(!hasClearPath(state.selected.r,state.selected.c,r,c)){ alert('Path blocked'); return }
 		moveBomber(state.selected.r, state.selected.c, r, c);
+		state.selected = {r,c};
+		tickBombs();
 		// Allow choosing any legal square around the moved bomber.
 		const candidates = getBombPlacementCandidates(r,c);
 		if(candidates.length===0){
@@ -158,11 +210,12 @@ function findBomberAt(r,c){for(const p of [1,2]){for(const b of state.players[p]
 function hasClearPath(sr,sc,tr,tc){
 	const queue = [{r:sr,c:sc,steps:0}];
 	const visited = new Set([`${sr},${sc}`]);
+	const maxMoves = getMaxMoveDistance();
 	for(let index=0;index<queue.length;index++){
 		const current = queue[index];
 		if(current.r===tr && current.c===tc) return true;
-		if(current.steps===3) continue;
-		for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+		if(current.steps===maxMoves) continue;
+		for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
 			const nr=current.r+dr, nc=current.c+dc;
 			const key=`${nr},${nc}`;
 			if(nr<0 || nr>=ROWS || nc<0 || nc>=COLS || visited.has(key)) continue;
@@ -180,7 +233,17 @@ function dropBomb(r,c){
 	const cell = state.cells[r][c];
 	if(!cell || isCellUnavailable(r,c) || findBomberAt(r,c)) return false;
 	cell.blocked = true;
+	state.bombs.push({r,c,turnsRemaining:Number(bombDelayEl.value || 3)});
 	return true;
+}
+
+function tickBombs(newBomb=null){
+	for(const bomb of [...state.bombs]){
+		if(bomb===newBomb) continue;
+		bomb.turnsRemaining--;
+		if(bomb.turnsRemaining>0) continue;
+		explodeBomb(bomb);
+	}
 }
 
 function checkGameOver(){
@@ -191,7 +254,21 @@ function checkGameOver(){
  }
 }
 
-function hasAnyMove(player){for(const b of state.players[player].bombers){for(let dr=-3;dr<=3;dr++){for(let dc=-3;dc<=3;dc++){const r=b.r+dr,c=b.c+dc; if(r<0||r>=ROWS||c<0||c>=COLS) continue; const dist=Math.abs(dr)+Math.abs(dc); if(dist===0 || dist>3) continue; if(!isCellUnavailable(r,c) && !findBomberAt(r,c) && hasClearPath(b.r,b.c,r,c)) return true}}} return false}
+function hasAnyMove(player){
+	const maxMoves = getMaxMoveDistance();
+	for(const b of state.players[player].bombers){
+		for(let dr=-maxMoves;dr<=maxMoves;dr++){
+			for(let dc=-maxMoves;dc<=maxMoves;dc++){
+				const r=b.r+dr,c=b.c+dc;
+				if(r<0||r>=ROWS||c<0||c>=COLS) continue;
+				const dist=Math.max(Math.abs(dr),Math.abs(dc));
+				if(dist===0 || dist>maxMoves) continue;
+				if(!isCellUnavailable(r,c) && !findBomberAt(r,c) && hasClearPath(b.r,b.c,r,c)) return true;
+			}
+		}
+	}
+	return false;
+}
 
 function changeBoardSize(size){
 	ROWS = size;
@@ -203,5 +280,8 @@ function changeBoardSize(size){
 
 resetBtn.addEventListener('click',()=>changeBoardSize(ROWS));
 boardSizeEl.addEventListener('change',()=>changeBoardSize(Number(boardSizeEl.value)));
+bomberCountEl.addEventListener('change',()=>changeBoardSize(ROWS));
+bombDelayEl.addEventListener('input',updateBombDelayLabel);
+moveRangeEl.addEventListener('input',updateMoveRangeLabel);
 
 init()

@@ -11,6 +11,8 @@ body{font-family:system-ui,Segoe UI,Roboto,sans-serif;display:flex;flex-directio
 .b2{background:#3bd67b}
 .cell.target{outline:3px dashed #ffb54d}
 .cell{position:relative}
+.bomb-marker{position:absolute;inset:10px;border:3px solid #f3c969;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#292929;color:#fff;font-size:18px;z-index:1}
+input[type="range"]{accent-color:#e18b31;cursor:pointer}
 .info{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
 label{font-weight:600}
 select,button{padding:6px 10px;border-radius:6px}
